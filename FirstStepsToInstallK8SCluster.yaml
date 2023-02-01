@@ -1,0 +1,68 @@
+- name: Install Kubernetes
+  hosts: k8scluster
+  become: yes
+  
+  vars:
+    source_file: /home/user/ansible/syscond.sh
+    destin_file: /home/user/syscond.sh
+  
+  tasks:
+  - name: Update repository
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+    
+  - name: Install curl
+    apt: name=curl
+    
+  - name: Install Containerd
+    apt: name=containerd
+    
+  - name: Add key kubernetes
+    ansible.builtin.apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+    
+  - name: Add repository
+    ansible.builtin.apt_repository:
+      repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+   
+  - name: Install kubeadm
+    ansible.builtin.apt:
+      name: kubeadm=1.24.6-00
+      state: present
+      force: yes
+     
+  - name: Install kubelet
+    ansible.builtin.apt:
+      name: kubelet=1.24.6-00
+      state: present
+      force: yes
+     
+  - name: Install kubectl
+    ansible.builtin.apt:
+      name: kubectl=1.24.6-00
+      state: present
+      force: yes
+      
+  - name: Copy script to remote server
+    copy: src={{ source_file }} dest={{ destin_file }}    
+  
+  - name: Repair containerd
+    command: bash /home/user/syscond.sh
+    
+  - name: Disable swap
+    command: swapoff -a
+
+  - name: Disable swap in fstab
+    replace:
+      path: /etc/fstab
+      regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+      replace: '# \1'
+      
+  - name: Pull container
+    command: kubeadm config images pull --kubernetes-version 1.24.6
+    
+  - name: Check connection
+    ansible.builtin.ping:
+    
+  
