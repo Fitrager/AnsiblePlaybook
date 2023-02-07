@@ -1,15 +1,12 @@
 - name: Prepare VM from Template
-  hosts: k8scluster
+  hosts: test
   become: yes
+  gather_facts: yes
   
   vars:
-    source_file: /etc/default/locale
-    destin_file: /etc/default/locale
-  
-  tasks:
-  - name: Copy locale to remote server
-    copy: src={{ source_file }} dest={{ destin_file }}
-      
+    name_vm: arunner
+    
+  tasks:   
   - name: Update repository
     apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
  
@@ -21,6 +18,9 @@
     
   - name: Update packages
     apt: upgrade=dist force_apt_get=yes
+    
+  - name: Change name VM
+    command: hostnamectl set-hostname {{name_vm}}
     
   - name: Reboot host
     ansible.builtin.reboot:
